@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Records</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: linear-gradient(to right, #E9F2FF, #fff);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #1B5E20;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background: #2C3E50;
+      color: white;
+    }
+
+    .no-data {
+      text-align: center;
+      color: #777;
+      padding: 20px;
+    }
+
+    /* Dark mode */
+    body.dark-mode {
+      background: #121212;
+      color: #eee;
+    }
+
+    .dark-mode .container {
+      background: #1f1f1f;
+      color: #eee;
+    }
+
+    .dark-mode table {
+      background: #2b2b2b;
+      color: #eee;
+    }
+
+    .dark-mode th {
+      background: #444;
+      color: #eee;
+    }
+
+    .dark-mode td {
+      border-color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Student Records</h2>
+    <div id="table-container"></div>
+  </div>
+
+  <script>
+    const email = sessionStorage.getItem('adminEmail');
+    if (!email) location.href = 'login.html';
+    const key = `students_${email}`;
+    let students = JSON.parse(localStorage.getItem(key)) || [];
+
+    function renderTable(data) {
+      const container = document.getElementById('table-container');
+      if (!data.length) {
+        container.innerHTML = '<p class="no-data">No student records found.</p>';
+        return;
+      }
+
+      let html = `<table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Father's Name</th>
+            <th>Course</th>
+            <th>Gender</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      data.forEach(s => {
+        html += `<tr>
+          <td>${s.name}</td>
+          <td>${s.fatherName}</td>
+          <td>${s.course}</td>
+          <td>${s.gender}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function applySearch(query) {
+      const filtered = students.filter(s =>
+        s.name.toLowerCase().includes(query.toLowerCase()) ||
+        s.fatherName.toLowerCase().includes(query.toLowerCase()) ||
+        s.course.toLowerCase().includes(query.toLowerCase()) ||
+        (s.gender || '').toLowerCase().includes(query.toLowerCase())
+      );
+      renderTable(filtered);
+    }
+
+    // Receive broadcast search from dashboard
+    window.addEventListener('message', e => {
+      if (e.data.type === 'SEARCH') {
+        applySearch(e.data.query || '');
+      }
+    });
+
+    function loadAndRender() {
+      students = JSON.parse(localStorage.getItem(key)) || [];
+      renderTable(students);
+    }
+
+    // Dark mode restore
+    window.onload = () => {
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+      }
+      loadAndRender();
+    };
+  </script>
+</body>
+</html>

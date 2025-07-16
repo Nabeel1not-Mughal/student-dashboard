@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Edit Student Records</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: linear-gradient(to right, #E9F2FF, #fff);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #1B5E20;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background: #2C3E50;
+      color: white;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .save-btn, .save-all-btn {
+      background: #1B5E20;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .save-btn:hover, .save-all-btn:hover {
+      background: #2E7D32;
+    }
+
+    .no-data {
+      text-align: center;
+      color: #777;
+      padding: 20px;
+    }
+
+    .toast-confirm {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toast-confirm button {
+      padding: 4px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .yes-btn {
+      background-color: #2E7D32;
+    }
+
+    .no-btn {
+      background-color: #f44336;
+    }
+
+    .center {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    /* Dark mode */
+    body.dark-mode {
+      background: #121212;
+      color: #eee;
+    }
+
+    .dark-mode .container {
+      background: #1f1f1f;
+      color: #eee;
+    }
+
+    .dark-mode th {
+      background: #444;
+      color: #eee;
+    }
+
+    .dark-mode td {
+      border-color: #555;
+    }
+
+    .dark-mode input, .dark-mode select {
+      background: #2a2a2a;
+      color: #fff;
+      border-color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Edit Student Records</h2>
+    <div id="editor"></div>
+    <div class="center">
+      <button class="save-all-btn" onclick="saveAll()">Save All Changes</button>
+    </div>
+  </div>
+
+  <script>
+    const email = sessionStorage.getItem('adminEmail');
+    if (!email) location.href = 'login.html';
+    const key = `students_${email}`;
+    let students = JSON.parse(localStorage.getItem(key)) || [];
+
+    function showToast(msg, type = 'success') {
+      Toastify({
+        text: msg,
+        duration: 3000,
+        gravity: 'top',
+        position: 'center',
+        style: {
+          background: type === 'success' ? '#2E7D32' : '#f44336',
+          color: '#fff'
+        }
+      }).showToast();
+    }
+
+    function renderEditor() {
+      const container = document.getElementById('editor');
+      if (!students.length) {
+        container.innerHTML = '<p class="no-data">No student records to edit.</p>';
+        return;
+      }
+
+      let html = `<table><thead>
+        <tr>
+          <th>Name</th>
+          <th>Father's Name</th>
+          <th>Course</th>
+          <th>Gender</th>
+          <th>Save</th>
+        </tr></thead><tbody>`;
+
+      students.forEach((s, i) => {
+        html += `<tr>
+          <td><input type="text" id="name-${i}" value="${s.name}"></td>
+          <td><input type="text" id="father-${i}" value="${s.fatherName}"></td>
+          <td>
+            <select id="course-${i}">
+              <option>Nursery</option>
+              <option>Play</option>
+              <option>Primary</option>
+              <option>Middle</option>
+              <option>Matric</option>
+              <option>Intermediate</option>
+            </select>
+          </td>
+          <td>
+            <select id="gender-${i}">
+              <option value="">--Select--</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </td>
+          <td><button class="save-btn" onclick="confirmSave(${i})">Save</button></td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+
+      students.forEach((s, i) => {
+        document.getElementById(`course-${i}`).value = s.course;
+        document.getElementById(`gender-${i}`).value = s.gender || '';
+      });
+    }
+
+    function confirmSave(i) {
+      const name = document.getElementById(`name-${i}`).value.trim().toUpperCase();
+      const father = document.getElementById(`father-${i}`).value.trim().toUpperCase();
+      const course = document.getElementById(`course-${i}`).value;
+      const gender = document.getElementById(`gender-${i}`).value;
+
+      if (!name || !father || !course || !gender) {
+        return showToast('All fields are required', 'error');
+      }
+
+      const toast = Toastify({
+        node: createConfirmationNode(() => {
+          students[i] = { ...students[i], name, fatherName: father, course, gender };
+          localStorage.setItem(key, JSON.stringify(students));
+          showToast('Record updated');
+        }),
+        duration: 5000,
+        gravity: 'top',
+        position: 'center',
+        close: true,
+        style: { background: '#2C3E50', padding: '10px' }
+      });
+      toast.showToast();
+    }
+
+    function createConfirmationNode(onConfirm) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'toast-confirm';
+      wrapper.innerHTML = `
+        <span style="color:white;">Save changes?</span>
+        <button class="yes-btn">Yes</button>
+        <button class="no-btn">No</button>
+      `;
+      wrapper.querySelector('.yes-btn').onclick = () => {
+        onConfirm();
+        Toastify({ text: 'Confirmed', duration: 2000, style: { background: '#2E7D32' } }).showToast();
+        wrapper.remove();
+      };
+      wrapper.querySelector('.no-btn').onclick = () => {
+        Toastify({ text: 'Cancelled', duration: 2000, style: { background: '#f44336' } }).showToast();
+        wrapper.remove();
+      };
+      return wrapper;
+    }
+
+    function saveAll() {
+      let valid = true;
+      students = students.map((s, i) => {
+        const name = document.getElementById(`name-${i}`).value.trim().toUpperCase();
+        const father = document.getElementById(`father-${i}`).value.trim().toUpperCase();
+        const course = document.getElementById(`course-${i}`).value;
+        const gender = document.getElementById(`gender-${i}`).value;
+        if (!name || !father || !course || !gender) valid = false;
+        return { ...s, name, fatherName: father, course, gender };
+      });
+      if (!valid) return showToast('All fields are required before saving all.', 'error');
+      localStorage.setItem(key, JSON.stringify(students));
+      showToast('All records updated!');
+    }
+
+    window.onload = () => {
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+      }
+      renderEditor();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Student</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: linear-gradient(to bottom, #E9F2FF, #fff);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #1B5E20;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      background: #1B5E20;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #2E7D32;
+    }
+
+    /* Dark Mode */
+    body.dark-mode {
+      background: #121212;
+      color: #eee;
+    }
+
+    .dark-mode .container {
+      background: #1f1f1f;
+      color: #eee;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+
+    .dark-mode input,
+    .dark-mode select {
+      background: #333;
+      color: #fff;
+      border-color: #555;
+    }
+
+    .dark-mode button {
+      background: #2E7D32;
+    }
+
+    .dark-toggle {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+
+    .dark-toggle label {
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="dark-toggle">
+      <label>
+        <input type="checkbox" id="darkToggle" onchange="toggleDark()"> Dark Mode
+      </label>
+    </div>
+    <h2>Add Student Record</h2>
+    <form onsubmit="submitStudent(event)">
+      <label>Name</label>
+      <input id="name" type="text" required>
+
+      <label>Father's Name</label>
+      <input id="fatherName" type="text" required>
+
+      <label>Course</label>
+      <select id="course" required>
+        <option value="">--Select--</option>
+        <option>Nursery</option>
+        <option>Play</option>
+        <option>Primary</option>
+        <option>Middle</option>
+        <option>Matric</option>
+        <option>Intermediate</option>
+      </select>
+
+      <label>Gender</label>
+      <select id="gender" required>
+        <option value="">--Select--</option>
+        <option>Male</option>
+        <option>Female</option>
+      </select>
+
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+
+  <script>
+    const email = sessionStorage.getItem('adminEmail');
+    if (!email) location.href = 'login.html';
+    const key = `students_${email}`;
+
+    function showToast(msg, type = 'success') {
+      Toastify({
+        text: msg,
+        duration: 3000,
+        gravity: 'top',
+        position: 'right',
+        style: {
+          background: type === 'success' ? '#2E7D32' : '#f44336',
+          color: '#fff'
+        }
+      }).showToast();
+    }
+
+    function submitStudent(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim().toUpperCase();
+      const father = document.getElementById('fatherName').value.trim().toUpperCase();
+      const course = document.getElementById('course').value;
+      const gender = document.getElementById('gender').value;
+
+      if (!name || !father || !course || !gender) {
+        return showToast('All fields required', 'error');
+      }
+
+      const studentId = Date.now().toString();
+      const newStudent = { studentId, name, fatherName: father, course, gender };
+      const data = JSON.parse(localStorage.getItem(key)) || [];
+      data.push(newStudent);
+      localStorage.setItem(key, JSON.stringify(data));
+      showToast('Student added!');
+      e.target.reset();
+    }
+
+    // Dark mode logic
+    function toggleDark() {
+      const dark = document.getElementById('darkToggle').checked;
+      document.body.classList.toggle('dark-mode', dark);
+      localStorage.setItem('darkMode', dark);
+    }
+
+    window.onload = () => {
+      const darkEnabled = localStorage.getItem('darkMode') === 'true';
+      document.getElementById('darkToggle').checked = darkEnabled;
+      document.body.classList.toggle('dark-mode', darkEnabled);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Delete Student Records</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: linear-gradient(to bottom, #E9F2FF, #fff);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #1B5E20;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background: #2C3E50;
+      color: white;
+    }
+
+    .delete-btn {
+      background: #1B5E20;
+      color: white;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .delete-btn:hover {
+      background: #2E7D32;
+    }
+
+    .no-data {
+      text-align: center;
+      color: #777;
+      padding: 20px;
+    }
+
+    /* Dark mode */
+    body.dark-mode {
+      background: #121212;
+      color: #eee;
+    }
+
+    .dark-mode .container {
+      background: #1f1f1f;
+      color: #eee;
+    }
+
+    .dark-mode th {
+      background: #444;
+      color: #eee;
+    }
+
+    .dark-mode td {
+      border-color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Delete Student Records</h2>
+    <div id="deleter"></div>
+  </div>
+
+  <script>
+    const email = sessionStorage.getItem('adminEmail');
+    if (!email) location.href = 'login.html';
+    const key = `students_${email}`;
+    let students = JSON.parse(localStorage.getItem(key)) || [];
+
+    function showToast(msg, type = 'success') {
+      Toastify({
+        text: msg,
+        duration: 3000,
+        gravity: 'top',
+        position: 'center',
+        style: {
+          background: type === 'success' ? '#2E7D32' : '#f44336',
+          color: '#fff'
+        }
+      }).showToast();
+    }
+
+    function renderDelete() {
+      const container = document.getElementById('deleter');
+      if (!students.length) {
+        container.innerHTML = '<p class="no-data">No records to delete.</p>';
+        return;
+      }
+
+      let html = `<table><thead><tr>
+        <th>Name</th>
+        <th>Father's Name</th>
+        <th>Course</th>
+        <th>Gender</th>
+        <th>Action</th>
+      </tr></thead><tbody>`;
+
+      students.forEach((s, i) => {
+        html += `<tr>
+          <td>${s.name}</td>
+          <td>${s.fatherName}</td>
+          <td>${s.course}</td>
+          <td>${s.gender || ''}</td>
+          <td><button class="delete-btn" onclick="confirmDelete(${i})">Delete</button></td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function confirmDelete(i) {
+      const name = students[i].name;
+      const confirmBox = confirm(`Are you sure you want to delete "${name}"?`);
+      if (!confirmBox) return;
+
+      students.splice(i, 1);
+      localStorage.setItem(key, JSON.stringify(students));
+      showToast('Record deleted');
+      renderDelete();
+    }
+
+    window.onload = () => {
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+      }
+      renderDelete();
+    };
+  </script>
+</body>
+</html>
